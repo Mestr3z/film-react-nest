@@ -1,43 +1,57 @@
-import { Module, Global } from '@nestjs/common';
-import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
+import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+
 import { FilmEntity } from '../repository/typeorm/film.entity';
 import { ScheduleEntity } from '../repository/typeorm/schedule.entity';
 
-@Global()
 @Module({
   imports: [
+    ConfigModule,
     TypeOrmModule.forRootAsync({
-      useFactory: async (): Promise<TypeOrmModuleOptions> => {
-        const driver =
-          process.env.DATABASE_DRIVER ?? process.env.DB_DRIVER ?? 'mongodb';
+      inject: [ConfigService],
+      useFactory: (cfg: ConfigService) => {
+        const driver = (
+          cfg.get<string>('DATABASE_DRIVER') || 'postgres'
+        ).toLowerCase();
 
         if (driver !== 'postgres') {
           return {
-            type: 'postgres',
             autoLoadEntities: false,
-            synchronize: false,
+            type: 'postgres',
+            keepConnectionAlive: false,
             entities: [],
-            retryAttempts: 0,
-          } as TypeOrmModuleOptions;
+            synchronize: false,
+            migrationsRun: false,
+            host: '127.0.0.1',
+            port: 5432,
+            username: 'none',
+            password: 'none',
+            database: 'none',
+            connectTimeoutMS: 1,
+          } as any;
+        }
+        const url = cfg.get<string>('DATABASE_URL');
+
+        if (url) {
+          return {
+            type: 'postgres',
+            url,
+            entities: [FilmEntity, ScheduleEntity],
+            synchronize: true,
+          };
         }
 
-        const url = process.env.DATABASE_URL;
-        const host = process.env.DATABASE_HOST ?? 'localhost';
-        const port = Number(process.env.DATABASE_PORT ?? 5432);
-        const username = process.env.DATABASE_USERNAME ?? 'film';
-        const password = process.env.DATABASE_PASSWORD ?? '';
-        const database = process.env.DATABASE_NAME ?? 'film';
-
-        const base: TypeOrmModuleOptions = {
+        return {
           type: 'postgres',
-          autoLoadEntities: true,
-          synchronize: false,
-          logging: false,
+          host: cfg.get<string>('DATABASE_HOST', 'localhost'),
+          port: cfg.get<number>('DATABASE_PORT', 5432),
+          username: cfg.get<string>('DATABASE_USERNAME', 'film'),
+          password: cfg.get<string>('DATABASE_PASSWORD', 'film'),
+          database: cfg.get<string>('DATABASE_NAME', 'film'),
           entities: [FilmEntity, ScheduleEntity],
+          synchronize: true,
         };
-
-        if (url && url.length > 0) return { ...base, url };
-        return { ...base, host, port, username, password, database };
       },
     }),
     TypeOrmModule.forFeature([FilmEntity, ScheduleEntity]),

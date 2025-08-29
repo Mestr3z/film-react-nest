@@ -1,3 +1,4 @@
+import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { FilmEntity } from './film.entity';
 import { ScheduleEntity } from './schedule.entity';
@@ -7,9 +8,9 @@ export class TypeOrmFilmsRepository implements FilmsRepository {
   private filmsRepo: Repository<FilmEntity>;
   private schedRepo: Repository<ScheduleEntity>;
 
-  constructor(ds: DataSource) {
-    this.filmsRepo = ds.getRepository(FilmEntity);
-    this.schedRepo = ds.getRepository(ScheduleEntity);
+  constructor(@InjectDataSource() private readonly ds: DataSource) {
+    this.filmsRepo = this.ds.getRepository(FilmEntity);
+    this.schedRepo = this.ds.getRepository(ScheduleEntity);
   }
 
   private mapEntity(f: FilmEntity): Film {

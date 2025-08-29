@@ -10,10 +10,12 @@ import { OrderController } from './order/order.controller';
 import { OrderService } from './order/order.service';
 
 import { filmsRepositoryProvider } from './repository';
+import { AppTypeOrmModule } from './database/typeorm.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, cache: true }),
+    AppTypeOrmModule,
     ServeStaticModule.forRoot({
       rootPath: path.join(process.cwd(), 'public', 'content', 'afisha'),
       serveRoot: '/content/afisha',
