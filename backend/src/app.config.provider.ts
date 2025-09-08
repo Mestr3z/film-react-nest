@@ -1,22 +1,34 @@
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 export const configProvider = {
-  imports: [ConfigModule.forRoot()],
+  imports: [ConfigModule.forRoot({ isGlobal: true, cache: true })],
+  inject: [ConfigService],
   provide: 'CONFIG',
-  useValue: <AppConfig>{
+  useFactory: (cfg: ConfigService): AppConfig => ({
     database: {
-      driver: process.env.DB_DRIVER ?? 'mongo',
-      url: process.env.DB_URL ?? 'mongodb://localhost:27017/afisha',
+      driver: (cfg.get<string>('DATABASE_DRIVER') || 'postgres').toLowerCase(),
+      url: cfg.get<string>('DATABASE_URL') || undefined,
+      host: cfg.get<string>('DATABASE_HOST') || 'localhost',
+      port: Number(cfg.get<string>('DATABASE_PORT') || 5432),
+      username: cfg.get<string>('DATABASE_USERNAME') || 'film',
+      password: cfg.get<string>('DATABASE_PASSWORD') || 'film',
+      name: cfg.get<string>('DATABASE_NAME') || 'film',
     },
-    port: Number(process.env.PORT ?? 3000),
-  },
+    port: Number(cfg.get<string>('PORT') || 3000),
+  }),
 };
 
 export interface AppConfig {
   database: AppConfigDatabase;
   port: number;
 }
+
 export interface AppConfigDatabase {
   driver: string;
-  url: string;
+  url?: string;
+  host?: string;
+  port?: number;
+  username?: string;
+  password?: string;
+  name?: string;
 }
