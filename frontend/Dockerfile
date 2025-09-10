@@ -2,19 +2,19 @@ FROM node:20-bookworm-slim AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm i --include=optional
-
 FROM node:20-bookworm-slim AS build
 WORKDIR /app
-COPY package.json package-lock.json ./
 COPY --from=deps /app/node_modules ./node_modules
+COPY package.json package-lock.json ./
 COPY tsconfig*.json vite.config.* ./
 COPY index.html ./
 COPY public ./public
 COPY src ./src
+RUN set -eux; \
+ROLLUP_VER=$(node -p "require('rollup/package.json').version"); \
+npm i @rollup/rollup-linux-x64-gnu@${ROLLUP_VER}
 ARG VITE_API_URL
 ARG VITE_CDN_URL
 ENV VITE_API_URL=${VITE_API_URL}
 ENV VITE_CDN_URL=${VITE_CDN_URL}
-ENV ROLLUP_DISABLE_NATIVE=1
-
 RUN npm run build
