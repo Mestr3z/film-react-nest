@@ -1,10 +1,10 @@
 FROM node:20-bookworm-slim AS deps
 WORKDIR /app
-COPY package.json ./
+COPY package.json package-lock.json ./
 RUN npm ci
 FROM node:20-bookworm-slim AS build
 WORKDIR /app
-COPY package.json ./
+COPY package.json package-lock.json ./
 COPY --from=deps /app/node_modules ./node_modules
 COPY tsconfig*.json vite.config.* ./
 COPY index.html ./
