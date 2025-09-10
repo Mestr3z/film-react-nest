@@ -1,0 +1,69 @@
+name: film
+
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: ${DATABASE_NAME}
+      POSTGRES_USER: ${DATABASE_USERNAME}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks: [ filmnet ]
+  pgadmin:
+    image: dpage/pgadmin4:8
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
+    volumes:
+      - pgadmin:/var/lib/pgadmin
+    ports: ["8080:80"]
+    networks: [ filmnet ]
+
+  frontend-build:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: /api/afisha
+        VITE_CDN_URL: /content/afisha
+    volumes:
+      - frontend_dist:/app/dist
+    networks: [ filmnet ]
+    command: ["true"]
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      NODE_ENV: production
+      PORT: ${PORT:-3000}
+      DATABASE_DRIVER: ${DATABASE_DRIVER}
+      DATABASE_HOST: ${DATABASE_HOST}
+      DATABASE_PORT: ${DATABASE_PORT}
+      DATABASE_USERNAME: ${DATABASE_USERNAME}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
+      DATABASE_NAME: ${DATABASE_NAME}
+    depends_on:
+      - postgres
+    networks: [ filmnet ]
+
+  nginx:
+    build:
+      context: ./nginx
+    depends_on:
+      - frontend-build
+      - backend
+    volumes:
+      - frontend_dist:/usr/share/nginx/html:ro
+    ports: ["80:80"]
+    networks: [ filmnet ]
+
+networks:
+  filmnet:
+
+volumes:
+  pgdata:
+  pgadmin:
+  frontend_dist:
