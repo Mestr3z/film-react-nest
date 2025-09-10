@@ -2,6 +2,7 @@ FROM node:20-bookworm-slim AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm i --include=optional
+
 FROM node:20-bookworm-slim AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
@@ -14,4 +15,6 @@ ARG VITE_API_URL
 ARG VITE_CDN_URL
 ENV VITE_API_URL=${VITE_API_URL}
 ENV VITE_CDN_URL=${VITE_CDN_URL}
+ENV ROLLUP_DISABLE_NATIVE=1
+
 RUN npm run build
