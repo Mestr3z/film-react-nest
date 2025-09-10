@@ -1,10 +1,7 @@
 FROM node:20-bookworm-slim AS deps
 WORKDIR /app
 COPY package.json ./
-ENV npm_config_platform=linux
-ENV npm_config_arch=arm64
-ENV npm_config_libc=glibc
-RUN npm i --include=optional
+RUN npm ci
 FROM node:20-bookworm-slim AS build
 WORKDIR /app
 COPY package.json ./
